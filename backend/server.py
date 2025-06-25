@@ -258,6 +258,9 @@ async def get_active_alerts():
 @api_router.get("/weather/multiple")
 async def get_weather_multiple_cities():
     """Get weather for multiple major cities"""
+    print(f"WEATHER_API_KEY: {WEATHER_API_KEY}")
+    print(f"API key check: {not WEATHER_API_KEY or WEATHER_API_KEY == '374ab74fdf2a6686d8b177cff0b24af0'}")
+    
     # Demo mode: Return mock data if API key is invalid or demo key
     if not WEATHER_API_KEY or WEATHER_API_KEY == "374ab74fdf2a6686d8b177cff0b24af0" or WEATHER_API_KEY == "demo":
         print("Running in demo mode with mock data")
@@ -312,6 +315,7 @@ async def get_weather_multiple_cities():
             }
         ]
     
+    print("Running with real API")
     major_cities = [
         "Mumbai", "Delhi", "Kolkata", "Chennai", "Bangalore", "Hyderabad",
         "New York", "London", "Tokyo", "Sydney", "Dubai", "Singapore"
