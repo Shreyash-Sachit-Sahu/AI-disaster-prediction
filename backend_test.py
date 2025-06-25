@@ -150,10 +150,12 @@ class DisasterManagementAPITester:
     def test_weather_city_endpoint(self, city):
         """Test the weather/{city} endpoint"""
         def validate_response(data):
-            # In demo mode, this endpoint will likely return an error for any city
-            # since it's not implemented in the demo mode
-            if "detail" in data:
-                return True, f"API returned expected response for city endpoint in demo mode: {data['detail']}"
+            # For invalid cities, we expect an error
+            if "detail" in data and "Weather API error" in data["detail"]:
+                if "InvalidCityName" in city:
+                    return True, f"API correctly returned error for invalid city: {data['detail']}"
+                else:
+                    return False, f"Unexpected error for valid city {city}: {data['detail']}"
             
             required_fields = ['city', 'country', 'temperature', 'humidity', 
                               'pressure', 'wind_speed', 'description', 'risk_level']
@@ -171,12 +173,14 @@ class DisasterManagementAPITester:
             
             return True, f"Received valid weather data for {data['city']} with risk level: {risk_level}"
         
-        # We expect either 400 or 500 because the city endpoint might not work in demo mode
+        # For invalid cities, we expect 400, for valid cities 200
+        expected_status = 400 if "InvalidCityName" in city else 200
+        
         return self.run_test(
             f"Weather for {city}",
             "GET",
             f"/api/weather/{city}",
-            [400, 500],  # Accept either status code
+            expected_status,
             validation_func=validate_response
         )
 
