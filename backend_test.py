@@ -186,18 +186,43 @@ class DisasterManagementAPITester:
             if not isinstance(data, list):
                 return False, "Expected a list of alerts"
             
-            # Even if there are no alerts, the structure should be a list
-            if len(data) > 0:
-                # Check if the first item has the expected fields
-                required_fields = ['city', 'disaster_type', 'risk_level', 'message']
-                
-                for field in required_fields:
-                    if field not in data[0]:
-                        return False, f"Missing required field in alert: {field}"
-                
-                return True, f"Received {len(data)} alerts"
-            else:
-                return True, "No active alerts found (empty list)"
+            if len(data) == 0:
+                return False, "No alerts found, but demo mode should have alerts"
+            
+            # Check if the alerts have the expected fields
+            required_fields = ['city', 'disaster_type', 'risk_level', 'message', 'active']
+            
+            for field in required_fields:
+                if field not in data[0]:
+                    return False, f"Missing required field in alert: {field}"
+            
+            # Verify expected demo alerts
+            expected_alerts = {
+                'Mumbai': {'disaster_type': 'Severe Storm/Cyclone', 'risk_level': 'HIGH'},
+                'Delhi': {'disaster_type': 'Extreme Heatwave', 'risk_level': 'HIGH'},
+                'Dubai': {'disaster_type': 'Extreme Heatwave', 'risk_level': 'HIGH'}
+            }
+            
+            # Check if all expected alerts are present
+            found_alerts = {}
+            for alert in data:
+                city_name = alert['city']
+                if city_name in expected_alerts:
+                    found_alerts[city_name] = True
+                    expected = expected_alerts[city_name]
+                    
+                    if alert['risk_level'] != expected['risk_level']:
+                        return False, f"Alert for {city_name} has incorrect risk level: {alert['risk_level']} (expected {expected['risk_level']})"
+                    
+                    if expected['disaster_type'] not in alert['disaster_type']:
+                        return False, f"Alert for {city_name} has incorrect disaster type: {alert['disaster_type']} (expected to contain {expected['disaster_type']})"
+            
+            # Check if all expected alerts were found
+            missing_alerts = [city for city in expected_alerts if city not in found_alerts]
+            if missing_alerts:
+                return False, f"Missing expected alerts in demo data: {', '.join(missing_alerts)}"
+            
+            return True, f"Received {len(data)} alerts with all expected high-risk cities present"
         
         return self.run_test(
             "Alerts Endpoint",
