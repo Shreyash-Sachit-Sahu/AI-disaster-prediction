@@ -25,7 +25,13 @@ class DisasterManagementAPITester:
             elif method == 'POST':
                 response = requests.post(url, json=data, headers=headers)
             
-            status_success = response.status_code == expected_status
+            # Handle case where expected_status can be a list of acceptable status codes
+            if isinstance(expected_status, list):
+                status_success = response.status_code in expected_status
+                expected_status_str = " or ".join(str(s) for s in expected_status)
+            else:
+                status_success = response.status_code == expected_status
+                expected_status_str = str(expected_status)
             
             # Validate response content if validation function is provided
             content_success = True
@@ -41,7 +47,7 @@ class DisasterManagementAPITester:
                 if validation_message:
                     print(f"   {validation_message}")
             else:
-                print(f"❌ Failed - Expected status {expected_status}, got {response.status_code}")
+                print(f"❌ Failed - Expected status {expected_status_str}, got {response.status_code}")
                 if validation_message:
                     print(f"   {validation_message}")
             
@@ -55,7 +61,7 @@ class DisasterManagementAPITester:
             
             self.test_results.append(result)
             
-            return success, response.json() if response.status_code == expected_status else None
+            return success, response.json() if status_success else None
         
         except Exception as e:
             print(f"❌ Failed - Error: {str(e)}")
