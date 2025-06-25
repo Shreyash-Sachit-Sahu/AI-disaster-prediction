@@ -84,10 +84,6 @@ class DisasterManagementAPITester:
     def test_weather_multiple_endpoint(self):
         """Test the weather/multiple endpoint"""
         def validate_response(data):
-            # Check if we got an error response due to API key
-            if "detail" in data and "Weather API error" in data["detail"] and "401" in data["detail"]:
-                return True, "API returned expected error due to invalid OpenWeatherMap API key"
-            
             if not isinstance(data, list):
                 return False, "Expected a list of weather data"
             
@@ -96,20 +92,52 @@ class DisasterManagementAPITester:
             
             # Check if the first item has the expected fields
             required_fields = ['city', 'country', 'temperature', 'humidity', 
-                              'pressure', 'wind_speed', 'description', 'risk_level']
+                              'pressure', 'wind_speed', 'description', 'risk_level', 'disaster_type']
             
             for field in required_fields:
                 if field not in data[0]:
                     return False, f"Missing required field: {field}"
             
-            return True, f"Received weather data for {len(data)} cities"
+            # Verify expected demo data
+            expected_cities = {
+                'Mumbai': {'temperature': 42.0, 'risk_level': 'HIGH', 'disaster_type': 'Severe Storm/Cyclone, Extreme Heatwave'},
+                'Delhi': {'temperature': 46.0, 'risk_level': 'HIGH', 'disaster_type': 'Extreme Heatwave, Drought Risk'},
+                'London': {'temperature': 22.0, 'risk_level': 'LOW', 'disaster_type': 'Normal Conditions'},
+                'Tokyo': {'temperature': 38.0, 'risk_level': 'MEDIUM', 'disaster_type': 'Storm, Heatwave'},
+                'Dubai': {'temperature': 48.0, 'risk_level': 'HIGH', 'disaster_type': 'Extreme Heatwave'},
+                'Singapore': {'temperature': 32.0, 'risk_level': 'HIGH', 'disaster_type': 'Severe Storm/Cyclone'}
+            }
+            
+            # Check if all expected cities are present with correct data
+            found_cities = {}
+            for city_data in data:
+                city_name = city_data['city']
+                if city_name in expected_cities:
+                    found_cities[city_name] = True
+                    expected = expected_cities[city_name]
+                    
+                    if city_data['temperature'] != expected['temperature']:
+                        return False, f"City {city_name} has incorrect temperature: {city_data['temperature']} (expected {expected['temperature']})"
+                    
+                    if city_data['risk_level'] != expected['risk_level']:
+                        return False, f"City {city_name} has incorrect risk level: {city_data['risk_level']} (expected {expected['risk_level']})"
+                    
+                    if city_data['disaster_type'] != expected['disaster_type']:
+                        return False, f"City {city_name} has incorrect disaster type: {city_data['disaster_type']} (expected {expected['disaster_type']})"
+            
+            # Check if all expected cities were found
+            missing_cities = [city for city in expected_cities if city not in found_cities]
+            if missing_cities:
+                return False, f"Missing expected cities in demo data: {', '.join(missing_cities)}"
+            
+            return True, f"Received demo weather data for {len(data)} cities with all expected cities present"
         
-        # We expect 400 because the OpenWeatherMap API key is invalid
+        # We expect 200 because we're using the demo mode
         return self.run_test(
-            "Weather Multiple Cities Endpoint",
+            "Weather Multiple Cities Endpoint (Demo Mode)",
             "GET",
             "/api/weather/multiple",
-            400,
+            200,
             validation_func=validate_response
         )
 
