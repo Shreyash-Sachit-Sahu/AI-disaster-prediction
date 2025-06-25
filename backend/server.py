@@ -228,6 +228,59 @@ async def get_active_alerts():
 @api_router.get("/weather/multiple")
 async def get_weather_multiple_cities():
     """Get weather for multiple major cities"""
+    # Demo mode: Return mock data if API key is invalid
+    if not WEATHER_API_KEY or WEATHER_API_KEY == "374ab74fdf2a6686d8b177cff0b24af0":
+        return [
+            {
+                'city': 'Mumbai', 'country': 'IN', 'lat': 19.0760, 'lon': 72.8777,
+                'temperature': 42.0, 'humidity': 85, 'pressure': 995, 'wind_speed': 22,
+                'description': 'heavy rain with strong winds', 'risk_level': 'HIGH', 'risk_score': 0.9,
+                'disaster_type': 'Severe Storm/Cyclone, Extreme Heatwave'
+            },
+            {
+                'city': 'Delhi', 'country': 'IN', 'lat': 28.6139, 'lon': 77.2090,
+                'temperature': 46.0, 'humidity': 25, 'pressure': 1025, 'wind_speed': 8,
+                'description': 'clear sky, very hot', 'risk_level': 'HIGH', 'risk_score': 0.8,
+                'disaster_type': 'Extreme Heatwave, Drought Risk'
+            },
+            {
+                'city': 'London', 'country': 'GB', 'lat': 51.5074, 'lon': -0.1278,
+                'temperature': 22.0, 'humidity': 65, 'pressure': 1015, 'wind_speed': 5,
+                'description': 'partly cloudy', 'risk_level': 'LOW', 'risk_score': 0.1,
+                'disaster_type': 'Normal Conditions'
+            },
+            {
+                'city': 'Tokyo', 'country': 'JP', 'lat': 35.6762, 'lon': 139.6503,
+                'temperature': 38.0, 'humidity': 78, 'pressure': 1002, 'wind_speed': 18,
+                'description': 'thunderstorm with heavy rain', 'risk_level': 'MEDIUM', 'risk_score': 0.6,
+                'disaster_type': 'Storm, Heatwave'
+            },
+            {
+                'city': 'New York', 'country': 'US', 'lat': 40.7128, 'lon': -74.0060,
+                'temperature': 25.0, 'humidity': 55, 'pressure': 1012, 'wind_speed': 7,
+                'description': 'clear sky', 'risk_level': 'LOW', 'risk_score': 0.1,
+                'disaster_type': 'Normal Conditions'
+            },
+            {
+                'city': 'Sydney', 'country': 'AU', 'lat': -33.8688, 'lon': 151.2093,
+                'temperature': 35.0, 'humidity': 40, 'pressure': 1020, 'wind_speed': 12,
+                'description': 'sunny and dry', 'risk_level': 'MEDIUM', 'risk_score': 0.4,
+                'disaster_type': 'Drought Risk'
+            },
+            {
+                'city': 'Dubai', 'country': 'AE', 'lat': 25.2048, 'lon': 55.2708,
+                'temperature': 48.0, 'humidity': 20, 'pressure': 1018, 'wind_speed': 15,
+                'description': 'clear sky, extreme heat', 'risk_level': 'HIGH', 'risk_score': 0.8,
+                'disaster_type': 'Extreme Heatwave'
+            },
+            {
+                'city': 'Singapore', 'country': 'SG', 'lat': 1.3521, 'lon': 103.8198,
+                'temperature': 32.0, 'humidity': 88, 'pressure': 998, 'wind_speed': 25,
+                'description': 'tropical storm approaching', 'risk_level': 'HIGH', 'risk_score': 0.7,
+                'disaster_type': 'Severe Storm/Cyclone'
+            }
+        ]
+    
     major_cities = [
         "Mumbai", "Delhi", "Kolkata", "Chennai", "Bangalore", "Hyderabad",
         "New York", "London", "Tokyo", "Sydney", "Dubai", "Singapore"
