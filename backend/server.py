@@ -1,4 +1,5 @@
 from fastapi import FastAPI, APIRouter, HTTPException
+from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -8,7 +9,7 @@ from pathlib import Path
 from pydantic import BaseModel, Field
 from typing import List, Dict, Any
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import requests
 import asyncio
 import math
@@ -26,7 +27,16 @@ WEATHER_API_KEY = os.environ.get('OPENWEATHER_API_KEY')
 WEATHER_BASE_URL = "https://api.openweathermap.org/data/2.5"
 
 # Create the main app without a prefix
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # MongoDB connect logic (Motor client is connected on instantiation)
+    print("📡 Starting up... MongoDB client initialized.")
+    yield
+    print("📴 Shutting down... Closing MongoDB connection.")
+    client.close()
+
+
+app = FastAPI(lifespan=lifespan)
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
@@ -331,7 +341,8 @@ async def get_active_alerts():
                 disaster_type="Severe Storm/Cyclone",
                 risk_level="HIGH",
                 message="HIGH risk of Severe Storm/Cyclone in Mumbai. Current conditions: heavy rain with strong winds, Temp: 42.0°C, Humidity: 85%",
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(timezone.utc)
+,
                 active=True
             ),
             DisasterAlert(
@@ -339,7 +350,8 @@ async def get_active_alerts():
                 disaster_type="Extreme Heatwave",
                 risk_level="HIGH", 
                 message="HIGH risk of Extreme Heatwave in Delhi. Current conditions: clear sky, very hot, Temp: 46.0°C, Humidity: 25%",
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(timezone.utc)
+,
                 active=True
             ),
             DisasterAlert(
@@ -347,7 +359,7 @@ async def get_active_alerts():
                 disaster_type="Extreme Heatwave",
                 risk_level="HIGH",
                 message="HIGH risk of Extreme Heatwave in Dubai. Current conditions: clear sky, extreme heat, Temp: 48.0°C, Humidity: 20%",
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(timezone.utc),
                 active=True
             )
         ]
@@ -391,6 +403,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-@app.on_event("shutdown")
-async def shutdown_db_client():
-    client.close()
+##@app.on_event("shutdown")
+#async def shutdown_db_client():
+ #  client.close()
+ 
