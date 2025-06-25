@@ -120,141 +120,6 @@ def calculate_disaster_risk(weather_data: Dict) -> tuple[str, float, str]:
     return risk_level, risk_score, disaster_type
 
 # Weather API endpoints
-@api_router.get("/weather/{city}")
-async def get_weather_by_city(city: str):
-    """Get current weather data for a city"""
-    if not WEATHER_API_KEY:
-        raise HTTPException(status_code=500, detail="Weather API key not configured")
-    
-    try:
-        url = f"{WEATHER_BASE_URL}/weather"
-        params = {
-            'q': city,
-            'appid': WEATHER_API_KEY,
-            'units': 'metric'
-        }
-        
-        response = requests.get(url, params=params)
-        response.raise_for_status()
-        data = response.json()
-        
-        # Calculate risk assessment
-        risk_level, risk_score, disaster_type = calculate_disaster_risk(data)
-        
-        weather_obj = WeatherData(
-            city=data['name'],
-            country=data['sys']['country'],
-            lat=data['coord']['lat'],
-            lon=data['coord']['lon'],
-            temperature=data['main']['temp'],
-            humidity=data['main']['humidity'],
-            pressure=data['main']['pressure'],
-            wind_speed=data['wind']['speed'],
-            wind_direction=data['wind'].get('deg', 0),
-            description=data['weather'][0]['description'],
-            risk_level=risk_level,
-            risk_score=risk_score
-        )
-        
-        # Store in database
-        await db.weather_data.insert_one(weather_obj.dict())
-        
-        # Check if alert needed
-        if risk_level in ["HIGH", "MEDIUM"]:
-            alert = DisasterAlert(
-                city=data['name'],
-                disaster_type=disaster_type,
-                risk_level=risk_level,
-                message=f"{risk_level} risk of {disaster_type} in {data['name']}. Current conditions: {data['weather'][0]['description']}, Temp: {data['main']['temp']}°C, Humidity: {data['main']['humidity']}%"
-            )
-            await db.alerts.insert_one(alert.dict())
-        
-        return weather_obj.dict()
-        
-    except requests.exceptions.RequestException as e:
-        raise HTTPException(status_code=400, detail=f"Weather API error: {str(e)}")
-
-@api_router.get("/weather/coordinates/{lat}/{lon}")
-async def get_weather_by_coordinates(lat: float, lon: float):
-    """Get current weather data by coordinates"""
-    if not WEATHER_API_KEY:
-        raise HTTPException(status_code=500, detail="Weather API key not configured")
-    
-    try:
-        url = f"{WEATHER_BASE_URL}/weather"
-        params = {
-            'lat': lat,
-            'lon': lon,
-            'appid': WEATHER_API_KEY,
-            'units': 'metric'
-        }
-        
-        response = requests.get(url, params=params)
-        response.raise_for_status()
-        data = response.json()
-        
-        # Calculate risk assessment
-        risk_level, risk_score, disaster_type = calculate_disaster_risk(data)
-        
-        weather_obj = WeatherData(
-            city=data['name'],
-            country=data['sys']['country'],
-            lat=data['coord']['lat'],
-            lon=data['coord']['lon'],
-            temperature=data['main']['temp'],
-            humidity=data['main']['humidity'],
-            pressure=data['main']['pressure'],
-            wind_speed=data['wind']['speed'],
-            wind_direction=data['wind'].get('deg', 0),
-            description=data['weather'][0]['description'],
-            risk_level=risk_level,
-            risk_score=risk_score
-        )
-        
-        # Store in database
-        await db.weather_data.insert_one(weather_obj.dict())
-        
-        return weather_obj.dict()
-        
-    except requests.exceptions.RequestException as e:
-        raise HTTPException(status_code=400, detail=f"Weather API error: {str(e)}")
-
-@api_router.get("/alerts")
-async def get_active_alerts():
-    """Get all active disaster alerts"""
-    # Demo mode: Add some sample alerts to showcase the system
-    if not WEATHER_API_KEY or WEATHER_API_KEY == "374ab74fdf2a6686d8b177cff0b24af0":
-        demo_alerts = [
-            DisasterAlert(
-                city="Mumbai",
-                disaster_type="Severe Storm/Cyclone",
-                risk_level="HIGH",
-                message="HIGH risk of Severe Storm/Cyclone in Mumbai. Current conditions: heavy rain with strong winds, Temp: 42.0°C, Humidity: 85%",
-                timestamp=datetime.utcnow(),
-                active=True
-            ),
-            DisasterAlert(
-                city="Delhi",
-                disaster_type="Extreme Heatwave",
-                risk_level="HIGH", 
-                message="HIGH risk of Extreme Heatwave in Delhi. Current conditions: clear sky, very hot, Temp: 46.0°C, Humidity: 25%",
-                timestamp=datetime.utcnow(),
-                active=True
-            ),
-            DisasterAlert(
-                city="Dubai",
-                disaster_type="Extreme Heatwave",
-                risk_level="HIGH",
-                message="HIGH risk of Extreme Heatwave in Dubai. Current conditions: clear sky, extreme heat, Temp: 48.0°C, Humidity: 20%",
-                timestamp=datetime.utcnow(),
-                active=True
-            )
-        ]
-        return demo_alerts
-    
-    alerts = await db.alerts.find({"active": True}).sort("timestamp", -1).to_list(100)
-    return [DisasterAlert(**alert) for alert in alerts]
-
 @api_router.get("/weather/multiple")
 async def get_weather_multiple_cities():
     """Get weather for multiple major cities"""
@@ -355,6 +220,60 @@ async def get_weather_multiple_cities():
             continue
     
     return weather_data
+
+@api_router.get("/weather/{city}")
+async def get_weather_by_city(city: str):
+    """Get current weather data for a city"""
+    if not WEATHER_API_KEY:
+        raise HTTPException(status_code=500, detail="Weather API key not configured")
+    
+    try:
+        url = f"{WEATHER_BASE_URL}/weather"
+        params = {
+            'q': city,
+            'appid': WEATHER_API_KEY,
+            'units': 'metric'
+        }
+        
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        data = response.json()
+        
+        # Calculate risk assessment
+        risk_level, risk_score, disaster_type = calculate_disaster_risk(data)
+        
+        weather_obj = WeatherData(
+            city=data['name'],
+            country=data['sys']['country'],
+            lat=data['coord']['lat'],
+            lon=data['coord']['lon'],
+            temperature=data['main']['temp'],
+            humidity=data['main']['humidity'],
+            pressure=data['main']['pressure'],
+            wind_speed=data['wind']['speed'],
+            wind_direction=data['wind'].get('deg', 0),
+            description=data['weather'][0]['description'],
+            risk_level=risk_level,
+            risk_score=risk_score
+        )
+        
+        # Store in database
+        await db.weather_data.insert_one(weather_obj.dict())
+        
+        # Check if alert needed
+        if risk_level in ["HIGH", "MEDIUM"]:
+            alert = DisasterAlert(
+                city=data['name'],
+                disaster_type=disaster_type,
+                risk_level=risk_level,
+                message=f"{risk_level} risk of {disaster_type} in {data['name']}. Current conditions: {data['weather'][0]['description']}, Temp: {data['main']['temp']}°C, Humidity: {data['main']['humidity']}%"
+            )
+            await db.alerts.insert_one(alert.dict())
+        
+        return weather_obj.dict()
+        
+    except requests.exceptions.RequestException as e:
+        raise HTTPException(status_code=400, detail=f"Weather API error: {str(e)}")
 
 # Original endpoints
 @api_router.get("/")
