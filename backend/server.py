@@ -222,6 +222,36 @@ async def get_weather_by_coordinates(lat: float, lon: float):
 @api_router.get("/alerts")
 async def get_active_alerts():
     """Get all active disaster alerts"""
+    # Demo mode: Add some sample alerts to showcase the system
+    if not WEATHER_API_KEY or WEATHER_API_KEY == "374ab74fdf2a6686d8b177cff0b24af0":
+        demo_alerts = [
+            DisasterAlert(
+                city="Mumbai",
+                disaster_type="Severe Storm/Cyclone",
+                risk_level="HIGH",
+                message="HIGH risk of Severe Storm/Cyclone in Mumbai. Current conditions: heavy rain with strong winds, Temp: 42.0°C, Humidity: 85%",
+                timestamp=datetime.utcnow(),
+                active=True
+            ),
+            DisasterAlert(
+                city="Delhi",
+                disaster_type="Extreme Heatwave",
+                risk_level="HIGH", 
+                message="HIGH risk of Extreme Heatwave in Delhi. Current conditions: clear sky, very hot, Temp: 46.0°C, Humidity: 25%",
+                timestamp=datetime.utcnow(),
+                active=True
+            ),
+            DisasterAlert(
+                city="Dubai",
+                disaster_type="Extreme Heatwave",
+                risk_level="HIGH",
+                message="HIGH risk of Extreme Heatwave in Dubai. Current conditions: clear sky, extreme heat, Temp: 48.0°C, Humidity: 20%",
+                timestamp=datetime.utcnow(),
+                active=True
+            )
+        ]
+        return demo_alerts
+    
     alerts = await db.alerts.find({"active": True}).sort("timestamp", -1).to_list(100)
     return [DisasterAlert(**alert) for alert in alerts]
 
